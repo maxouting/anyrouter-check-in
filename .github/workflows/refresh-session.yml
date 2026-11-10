@@ -1,0 +1,42 @@
+name: Refresh Session (temporary)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b
+        with:
+          version: "latest"
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: 安装依赖
+        run: uv sync --frozen
+
+      - name: 安装系统字体
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-noto-color-emoji fonts-wqy-zenhei
+
+      - name: 安装 CloakBrowser
+        run: uv run python -m cloakbrowser install
+
+      - name: 登录并导出 session
+        env:
+          TMP_REFRESH: ${{ secrets.TMP_REFRESH }}
+        run: uv run python scripts/refresh_session.py
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: accounts-new
+          path: accounts_new.json
+          if-no-files-found: ignore
