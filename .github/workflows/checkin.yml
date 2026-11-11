@@ -44,10 +44,16 @@ jobs:
         echo "✅ 环境初始化完成"
 
     - name: 安装系统依赖
+      continue-on-error: true
+      timeout-minutes: 3
       run: |
-        sudo apt-get update
-        sudo apt-get install -y xvfb fonts-noto-color-emoji fonts-freefont-ttf fonts-unifont \
-          fonts-ipafont-gothic fonts-wqy-zenhei fonts-tlwg-loma-otf
+        if getent hosts archive.ubuntu.com >/dev/null 2>&1; then
+          sudo apt-get update -o Acquire::Retries=1 -o Acquire::http::Timeout=10 || true
+          sudo apt-get install -y xvfb fonts-noto-color-emoji fonts-freefont-ttf fonts-unifont \
+            fonts-ipafont-gothic fonts-wqy-zenhei fonts-tlwg-loma-otf || true
+        else
+          echo "apt 源 DNS 解析失败，跳过系统依赖安装（runner 已预装 xvfb，不影响签到）"
+        fi
 
     - name: 缓存 CloakBrowser 二进制
       uses: actions/cache@v5
